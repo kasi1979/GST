@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discount & GST Calculator</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0d47a1, #1a237e);
+            color: #e3f2fd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            width: 350px;
+            text-align: center;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            font-size: 1.6em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #536dfe;
+            padding-bottom: 10px;
+            color: #fff;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 6px;
+            color: #bbdefb;
+            font-size: 0.95em;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 18px;
+            border: 1px solid #5c6bc0;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1em;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input[type="number"]:focus {
+            border-color: #8c9eff;
+            box-shadow: 0 0 8px rgba(140, 158, 255, 0.6);
+            outline: none;
+        }
+
+        input[type="number"]:disabled {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #9fa8da;
+            cursor: not-allowed;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1em;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        button[type="button"] {
+            background-color: #4caf50;
+            color: #fff;
+        }
+
+        button[type="button"]:hover {
+            background-color: #388e3c;
+        }
+
+        button[type="reset"] {
+            background-color: #5c6bc0;
+            color: #fff;
+        }
+
+        button[type="reset"]:hover {
+            background-color: #3f51b5;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        h3#result {
+            margin-top: 25px;
+            border: 1px solid #5c6bc0;
+            border-radius: 8px;
+            background-color: rgba(63, 81, 181, 0.3);
+            line-height: 1.7;
+            opacity: 0;
+            height: 0;
+            overflow: hidden;
+            transition: opacity 0.4s, height 0.4s, padding 0.4s;
+        }
+
+        h3#result.show {
+            opacity: 1;
+            height: auto;
+            padding: 15px;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #5c6bc0;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Discount & GST Calculator</h2>
+        <form id="gstForm" onreset="resetFormState()">
+            <label for="mrp">MRP (₹)</label>
+            <input type="number" id="mrp" name="mrp" max="40000" min="1" required 
+                   oninput="limitValue(this); validateField('mrp', 'discount')">
+
+            <label for="discount">Discount (%)</label>
+            <input type="number" id="discount" name="discount" max="20" min="0" required 
+                   oninput="limitValue(this); validateField('discount', 'gst')">
+
+            <label for="gst">GST (%)</label>
+            <input type="number" id="gst" name="gst" max="28" min="0" required 
+                   oninput="limitValue(this)">
+
+            <div class="button-group">
+                <button type="button" onclick="calculateGST()">Compute</button>
+                <button type="reset">Reset</button>
+            </div>
+        </form>
+
+        <h3 id="result"></h3>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', initialDisable);
+        const resultElement = document.getElementById('result');
+
+        function initialDisable() {
+            document.getElementById('discount').disabled = true;
+            document.getElementById('gst').disabled = true;
+            resultElement.classList.remove('show');
+        }
+
+        function resetFormState() {
+            setTimeout(initialDisable, 100);
+            return true;
+        }
+
+        function enableNextField(nextId) {
+            document.getElementById(nextId).disabled = false;
+        }
+
+        function disableNextField(nextId) {
+            const nextElement = document.getElementById(nextId);
+            nextElement.disabled = true;
+            nextElement.value = "";
+            if (nextId === 'discount') disableNextField('gst');
+            resultElement.classList.remove('show');
+        }
+
+        function validateField(currentId, nextId) {
+            const currentElement = document.getElementById(currentId);
+            const isValid = currentElement.checkValidity() && currentElement.value !== "";
+            if (isValid) enableNextField(nextId);
+            else disableNextField(nextId);
+        }
+
+        // 🚫 Prevent typing beyond max/min
+        function limitValue(input) {
+            const value = parseFloat(input.value);
+            const min = parseFloat(input.min);
+            const max = parseFloat(input.max);
+            if (value > max) input.value = max;
+            if (value < min && input.value !== "") input.value = min;
+        }
+
+        function calculateGST() {
+            const mrp = parseFloat(document.getElementById('mrp').value);
+            const discount = parseFloat(document.getElementById('discount').value);
+            const gst = parseFloat(document.getElementById('gst').value);
+
+            if (!document.getElementById('gstForm').checkValidity()) {
+                document.getElementById('gstForm').reportValidity();
+                resultElement.classList.remove('show');
+                return;
+            }
+
+            const discountAmount = (mrp * discount) / 100;
+            const taxableValue = mrp - discountAmount;
+            const gstAmount = (taxableValue * gst) / 100;
+            const finalPrice = taxableValue + gstAmount;
+
+            resultElement.innerHTML = `
+                <strong>Calculation Summary:</strong><br>
+                MRP: ₹${mrp.toFixed(2)}<br>
+                Discount (${discount}%): ₹${discountAmount.toFixed(2)}<br>
+                <hr>
+                Taxable Value: ₹${taxableValue.toFixed(2)}<br>
+                GST (${gst}%): ₹${gstAmount.toFixed(2)}<br>
+                <hr>
+                <strong style="color:#4caf50;">Final Price: ₹${finalPrice.toFixed(2)}</strong>
+            `;
+            resultElement.classList.add('show');
+        }
+    </script>
+</body>
+</html>
